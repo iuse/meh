@@ -1,22 +1,22 @@
 #include "heatmap.h"
 
 /**
- * Main constructor
+ * Constructs a Heatmap object.
  *
  * @brief Heatmap::Heatmap
- * @param parent
+ * @param parent defaults to 0.
  */
-Heatmap::Heatmap(QWidget *parent) :
+Heatmap::Heatmap(int mode, QWidget *parent) :
     QWidget(parent),
-    udp(this),
+    udp(),
     colorImage(WIN_WIDTH, WIN_HEIGHT, QImage::Format_ARGB32),
     alphaImage(WIN_WIDTH, WIN_HEIGHT, QImage::Format_ARGB32),
     data{},
     width(WIN_WIDTH),
     height(WIN_HEIGHT),
+    radius(RADIUS),
     max(1),
-    opacity(150),
-    radius(RADIUS)
+    opacity(OPACITY)
 {
     // Append image to top left corner
     setAttribute(Qt::WA_StaticContents);
@@ -27,35 +27,53 @@ Heatmap::Heatmap(QWidget *parent) :
     // Reset visible background color
     this->clearImages();
 
-    // Connect coordinate update signal to the slot
-//    connect(&udp, SIGNAL(coordChanged(int,int)), this, SLOT(setCoord(int,int)));
-
-    // Start mouse tracking
-//    this->setMouseTracking(true);
+    if(mode == MODE_OPENGAZER) {
+        // Connect coordinate update signal to the slot
+        connect(&udp, SIGNAL(coordChanged(int,int)),
+                this, SLOT(setCoord(int,int)));
+    } else if(mode == MODE_MOUSE) {
+        // Start mouse tracking
+        this->setMouseTracking(true);
+    }
 
     // resize widget to fullscreen
     resize(WIN_WIDTH, WIN_HEIGHT);
 }
 
 /**
- * Slot to receive new coordinates and update the heatmap
+ * Slot to receive new coordinates and update the heatmap.
+ * This can be used by other Qt objects emitting signals.
  *
- * @brief Heatmap::setCoord
- * @param x
- * @param y
+ * @brief Heatmap::setCoord sets new coordinates through Qt signal.
+ * @param x x-coordinate on the widget window.
+ * @param y y-coordinate on the widget window.
  */
 void Heatmap::setCoord(int x, int y)
-{
+{    // Coordinates update
+    void updateCoords(int x, int y);
     this->addDataPoint((x<WIN_WIDTH)?x:(WIN_WIDTH-1),
                        (y<WIN_HEIGHT)?y:(WIN_HEIGHT-1));
 }
 
+/**
+ * Direct call to update new coordinates for the heatmap.
+ *
+ * @brief Heatmap::updateCoords
+ * @param x x-coordinate on the widget window.
+ * @param y y-coordinate on the widget window.
+ */
 void Heatmap::updateCoords(int x, int y)
 {
     this->addDataPoint((x<WIN_WIDTH)?x:(WIN_WIDTH-1),
                        (y<WIN_HEIGHT)?y:(WIN_HEIGHT-1));
 }
 
+/**
+ * Overriden paintEvent. Draws the color spectrum representation of the heatmap.
+ *
+ * @brief Heatmap::paintEvent
+ * @param ev
+ */
 void Heatmap::paintEvent(QPaintEvent *ev)
 {
     QPainter painter(this);
@@ -65,13 +83,8 @@ void Heatmap::paintEvent(QPaintEvent *ev)
 
 void Heatmap::mouseMoveEvent(QMouseEvent *ev)
 {
-//    this->addDataPoint(ev->x(), ev->y());
-//    emit Mouse_Pos();
-}
-
-void Heatmap::mousePressEvent(QMouseEvent *ev)
-{
-
+    this->addDataPoint(ev->x(), ev->y());
+    emit mouse_pos();
 }
 
 /**
@@ -89,7 +102,7 @@ void Heatmap::addDataPoint(int x, int y)
 
     if(this->max < temp) {
         this->max = temp;
-        this->setDataSet(temp);
+        this->setDataSet();
     } else {
         this->drawAlphaImage(x, y, temp, true);
     }
@@ -103,9 +116,8 @@ void Heatmap::addDataPoint(int x, int y)
  * is bigger than zero is updated, but more optimizations could be done.
  *
  * @brief Heatmap::setDataSet
- * @param max
  */
-void Heatmap::setDataSet(int max)
+void Heatmap::setDataSet()
 {
     this->clearImages();
     for(int i = 0; i < WIN_WIDTH; i++)
@@ -136,8 +148,8 @@ void Heatmap::drawAlphaImage(int x, int y, int count, bool refresh)
     int intensity = this->opacity * ((float)count / (float)this->max);
 
     grad.setColorAt(0.0, QColor::fromRgb(0, 0, 0, (int) intensity));
-    grad.setColorAt(0.3, QColor::fromRgb(0, 0, 0, (int) (intensity * 0.7)));
-    grad.setColorAt(0.6, QColor::fromRgb(0, 0, 0, (int) (intensity * 0.2)));
+    grad.setColorAt(0.1, QColor::fromRgb(0, 0, 0, (int) (intensity * 0.8)));
+    grad.setColorAt(0.5, QColor::fromRgb(0, 0, 0, (int) (intensity * 0.2)));
     grad.setColorAt(1.0, QColor::fromRgb(0, 0, 0, 0));
 
     painter.setPen(Qt::NoPen);
@@ -165,22 +177,21 @@ void Heatmap::refreshColorImage()
     uint color, alphaMask;
     for(int x = 0; x < WIN_WIDTH; x++)
         for(int y = 0; y < WIN_HEIGHT; y++) {
-            alpha = this->getAlphaLevel(x, y);
+            alpha = this->alphaImage.pixel(x, y) >> 24;
             if(alpha > 0) {
-                index = alpha; //((float)alpha / this->opacity) * 255; // mapping alpha range to color spectrum
-                alphaMask = (alpha << 24) | 16777215u; // mask to add alpha level for the pixel 16777215 = 0xFFFFFF
+                index = alpha;
+                alpha = alpha * ((float) this->opacity / 255);  // scale back alpha relative to max opacity level
+                alphaMask = (alpha << 24) | 16777215u;          // mask to add alpha level for the pixel 16777215 = 0xFFFFFF
                 color = this->palette[index].rgb() & alphaMask; // final color value as 0xAARRGGBB unsigned integer
-//                qDebug() << "alphaImage(" << x << "," << y<<"):"<< QString::number(alphaImage.pixel(x,y), 16);
-//                qDebug() << "     color(" << x << "," << y<<"):"<< QString::number(t, 16);
-                this->colorImage.setPixel(x, y, color);
+                this->colorImage.setPixel(x, y, color);         // assign calculated color to the pixel
             }
         }
 }
 
 void Heatmap::clearImages()
 {
-    this->alphaImage.fill(QColor(255, 255, 255, 0)); //todo: aggiungere alpha channel?
-    this->colorImage.fill(QColor(255, 255, 255, 0)); //todo: aggiungere alpha channel?
+    this->alphaImage.fill(QColor(255, 255, 255, 0));
+    this->colorImage.fill(QColor(255, 255, 255, 0));
     update();
 }
 
@@ -204,11 +215,5 @@ void Heatmap::initColorPalette()
     for(int i = 0; i < 256; i++)
         this->palette[i] = paletteImage.pixel(0, i);
 }
-
-int Heatmap::getAlphaLevel(int x, int y)
-{
-    return this->alphaImage.pixel(x, y) >> 24;
-}
-
 
 

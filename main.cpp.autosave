@@ -6,6 +6,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
 
     Heatmap hm;
+    
     if(argc < 2)
         hm = new Heatmap(MODE_MOUSE);
     else if (argc == 2 && QString(argv[1]).toInt() == MODE_OPENGAZER)

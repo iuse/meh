@@ -8,20 +8,23 @@
 
 #include "udpadapter.h"
 
+#define MODE_OPENGAZER 0
+#define MODE_MOUSE 1
+
 #define WIN_WIDTH 1280
 #define WIN_HEIGHT 800
-#define RADIUS 70
+#define RADIUS 100
+#define OPACITY 150
 
-namespace Ui {
-class Heatmap;
-}
-
+/**
+ * @brief The Heatmap class
+ */
 class Heatmap : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit Heatmap(QWidget *parent = 0);
+    explicit Heatmap(int mode, QWidget *parent = 0);
 
 public slots:
     void setCoord(int x, int y);
@@ -29,7 +32,6 @@ public slots:
 protected:
     void paintEvent(QPaintEvent *ev);
     void mouseMoveEvent(QMouseEvent *ev);
-    void mousePressEvent(QMouseEvent *ev);
 
 private:
     UDPAdapter udp;
@@ -56,13 +58,12 @@ private:
 
     // Draw methods
     void addDataPoint(int x, int y);
-    void setDataSet(int max);//, std::vector< std::vector<int> > data);
+    void setDataSet();
     void drawAlphaImage(int x, int y, int count, bool refresh);
     void refreshColorImage();
     void clearImages();
 
     void initColorPalette();
-    int getAlphaLevel(int x, int y);
 
 signals:
     void mouse_pos();

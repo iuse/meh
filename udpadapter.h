@@ -6,7 +6,7 @@
 #include <QtGui>
 #include <QUdpSocket>
 
-#include "heatmap.h"
+//#include "heatmap.h"
 
 class UDPAdapter : public QObject
 {
@@ -14,7 +14,6 @@ class UDPAdapter : public QObject
 
 public:
     explicit UDPAdapter(QObject *parent = 0);
-//    explicit UDPAdapter(Heatmap *hm, QObject *parent = 0);
 
 signals:
     void coordChanged(int x, int y);

@@ -29,5 +29,5 @@ void UDPAdapter::readyRead() {
 //    qDebug() << "coord x:" << coordList[1];
 //    qDebug() << "coord y:" << coordList[3];
 //    this->h
-//    emit coordChanged(coordList[1].toInt(), coordList[3].toInt());
+    emit coordChanged(coordList[1].toInt(), coordList[3].toInt());
 }
