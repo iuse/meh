@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network
+QT       += core gui network webkitwidgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -14,10 +14,16 @@ TEMPLATE = app
 
 SOURCES += main.cpp \
     heatmap.cpp \
-    udpadapter.cpp
+    udpadapter.cpp \
+    mywebview.cpp
 
 HEADERS  += \
     heatmap.h \
-    udpadapter.h
+    udpadapter.h \
+    mywebview.h \
+    macros.h
 
 FORMS    +=
+
+RESOURCES += \
+    jquery.qrc

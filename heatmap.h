@@ -6,15 +6,8 @@
 #include <QtGui>
 #include <QDebug>
 
+#include "macros.h"
 #include "udpadapter.h"
-
-#define MODE_OPENGAZER 0
-#define MODE_MOUSE 1
-
-#define WIN_WIDTH 1280
-#define WIN_HEIGHT 800
-#define RADIUS 100
-#define OPACITY 150
 
 /**
  * @brief The Heatmap class
@@ -24,7 +17,7 @@ class Heatmap : public QWidget
     Q_OBJECT
 
 public:
-    explicit Heatmap(int mode, QWidget *parent = 0);
+    explicit Heatmap(int mode, UDPAdapter *udpAdapter, QWidget *parent = 0);
 
 public slots:
     void setCoord(int x, int y);
@@ -34,7 +27,7 @@ protected:
     void mouseMoveEvent(QMouseEvent *ev);
 
 private:
-    UDPAdapter udp;
+    UDPAdapter *udp;
 
     QImage colorImage;
     QImage alphaImage;
@@ -64,9 +57,6 @@ private:
     void clearImages();
 
     void initColorPalette();
-
-signals:
-    void mouse_pos();
 };
 
 #endif // HEATMAP_H

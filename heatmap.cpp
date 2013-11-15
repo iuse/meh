@@ -6,9 +6,8 @@
  * @brief Heatmap::Heatmap
  * @param parent defaults to 0.
  */
-Heatmap::Heatmap(int mode, QWidget *parent) :
+Heatmap::Heatmap(int mode, UDPAdapter *udpAdapter, QWidget *parent) :
     QWidget(parent),
-    udp(),
     colorImage(WIN_WIDTH, WIN_HEIGHT, QImage::Format_ARGB32),
     alphaImage(WIN_WIDTH, WIN_HEIGHT, QImage::Format_ARGB32),
     data{},
@@ -18,6 +17,8 @@ Heatmap::Heatmap(int mode, QWidget *parent) :
     max(1),
     opacity(OPACITY)
 {
+    this->udp = udpAdapter;
+
     // Append image to top left corner
     setAttribute(Qt::WA_StaticContents);
 
@@ -26,11 +27,10 @@ Heatmap::Heatmap(int mode, QWidget *parent) :
 
     // Reset visible background color
     this->clearImages();
-
+    this->setAttribute(Qt::WA_TransparentForMouseEvents);
     if(mode == MODE_OPENGAZER) {
         // Connect coordinate update signal to the slot
-        connect(&udp, SIGNAL(coordChanged(int,int)),
-                this, SLOT(setCoord(int,int)));
+        connect(udp, SIGNAL(coordChanged(int,int)), this, SLOT(setCoord(int,int)));
     } else if(mode == MODE_MOUSE) {
         // Start mouse tracking
         this->setMouseTracking(true);
@@ -84,7 +84,6 @@ void Heatmap::paintEvent(QPaintEvent *ev)
 void Heatmap::mouseMoveEvent(QMouseEvent *ev)
 {
     this->addDataPoint(ev->x(), ev->y());
-    emit mouse_pos();
 }
 
 /**
