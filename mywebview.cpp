@@ -1,34 +1,22 @@
 #include "mywebview.h"
 
-MyWebView::MyWebView(int mode, UDPAdapter *udpAdapter, QTimer *qTimer, QWidget *parent) :
+MyWebView::MyWebView(UDPAdapter *udpAdapter, QTimer *qTimer, QWidget *parent) :
     QWebView(parent),
-    mode(mode),
+    parent(parent),
     udp(udpAdapter),
     timer(qTimer)
 {
-//    this->settings()->setUserStyleSheetUrl(QUrl("data:text/css;charset=utf-8;base64,Lm1laC1xdC1zdHlsZSB7CiAgICBiYWNrZ3JvdW5kOiB5ZWxsb3cgIWltcG9ydGFudDsKICAgIG91dGxpbmU6IHJlZCBzb2xpZCB0aGljayAhaW1wb3J0YW50Owp9Cg=="));
-
-    this->load(QUrl("http://www.youtube.com/watch?v=AY4ajbu_G3k"));
-
-    if(this->mode == MODE_OPENGAZER) {
-        // Connect coordinate update signal to the slot
-        connect(udp, SIGNAL(coordChanged(int,int)), this, SLOT(setCoord(int,int)));
-    } else if(this->mode == MODE_MOUSE) {
-        // Start mouse tracking
-        this->setMouseTracking(true);
-    }
-    connect(this->timer, SIGNAL(timeout()), this, SLOT(update()));
-
+    connect(this->timer, SIGNAL(timeout()), this, SLOT(timeout()));
     this->resize(WIN_WIDTH, WIN_HEIGHT);
 }
 
-void MyWebView::setCoord(int x, int y)
-{
-    this->x = x;
-    this->y = y;
-}
-
-void MyWebView::update()
+/**
+ * Slot to receive timeout signal from a QTimer.
+ * It is used to set the sampling rate.
+ *
+ * @brief Heatmap::timeout
+ */
+void MyWebView::timeout()
 {
     QWebElement element;
     element = ((QWebHitTestResult)(this->page()->mainFrame()->hitTestContent(QPoint(this->x, this->y)))).element();
@@ -40,12 +28,28 @@ void MyWebView::update()
     }
 }
 
-void MyWebView::mouseMoveEvent(QMouseEvent *ev)
+/**
+ * Slot to receive new coordinates and update the heatmap.
+ * This can be used by other Qt objects emitting signals.
+ *
+ * @brief Heatmap::setCoord sets new coordinates through Qt signal.
+ * @param x x-coordinate on the widget window.
+ * @param y y-coordinate on the widget window.
+ */
+void MyWebView::openGazerCoordChanged(int x, int y)
 {
-    if(this->mode == MODE_MOUSE) {
-        this->x = ev->x();
-        this->y = ev->y();
-    }
-    emit mouseCoordChanged(ev->x(), ev->y());
+    this->x = (x<WIN_WIDTH)?x:(WIN_WIDTH-1);
+    this->y = (y<WIN_HEIGHT)?y-65:(WIN_HEIGHT-1);
 }
 
+void MyWebView::mouseCoordChanged(int x, int y)
+{
+    this->x = x;
+    this->y = y;
+}
+
+
+void MyWebView::mouseMoveEvent(QMouseEvent *ev)
+{
+    emit setMouseCoordChanged(ev->x(), ev->y());
+}

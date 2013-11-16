@@ -15,13 +15,15 @@ TEMPLATE = app
 SOURCES += main.cpp \
     heatmap.cpp \
     udpadapter.cpp \
-    mywebview.cpp
+    mywebview.cpp \
+    mainwindow.cpp
 
 HEADERS  += \
     heatmap.h \
     udpadapter.h \
     mywebview.h \
-    macros.h
+    macros.h \
+    mainwindow.h
 
 FORMS    +=
 

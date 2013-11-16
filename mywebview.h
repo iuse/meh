@@ -14,21 +14,21 @@ class MyWebView : public QWebView
     Q_OBJECT
 
 public:
-    explicit MyWebView(int mode, UDPAdapter *udpAdapter, QTimer *qTimer, QWidget *parent = 0);
-
-public slots:
-    void setCoord(int x, int y);
-    void update();
+    explicit MyWebView(UDPAdapter *udpAdapter, QTimer *qTimer, QWidget *parent = 0);
 
 signals:
+    void setMouseCoordChanged(int x, int y);
+
+public slots:
+    void timeout();
+    void openGazerCoordChanged(int x, int y);
     void mouseCoordChanged(int x, int y);
 
 protected:
     void mouseMoveEvent(QMouseEvent *ev);
 
 private:
-    int mode;
-
+    QWidget *parent;
     UDPAdapter *udp;
     QTimer *timer;
 

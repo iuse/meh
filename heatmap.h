@@ -8,7 +8,6 @@
 
 #include "macros.h"
 #include "udpadapter.h"
-#include "mywebview.h"
 
 /**
  * @brief The Heatmap class
@@ -18,23 +17,20 @@ class Heatmap : public QWidget
     Q_OBJECT
 
 public:
-    explicit Heatmap(int mode, UDPAdapter *udpAdapter, QTimer *qTimer, MyWebView *myWebView, QWidget *parent = 0);
+    explicit Heatmap(UDPAdapter *udpAdapter, QTimer *qTimer, QWidget *parent = 0);
 
 public slots:
-    void setCoord(int x, int y);
     void timeout();
+    void openGazerCoordChanged(int x, int y);
     void mouseCoordChanged(int x, int y);
 
 protected:
     void paintEvent(QPaintEvent *ev);
-//    void mouseMoveEvent(QMouseEvent *ev);
 
 private:
-    int mode;
-
+    QWidget *parent;
     UDPAdapter *udp;
     QTimer *timer;
-    MyWebView *webview;
 
     int x;
     int y;

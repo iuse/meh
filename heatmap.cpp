@@ -6,12 +6,11 @@
  * @brief Heatmap::Heatmap
  * @param parent defaults to 0.
  */
-Heatmap::Heatmap(int mode, UDPAdapter *udpAdapter, QTimer *qTimer, MyWebView *myWebView, QWidget *parent) :
+Heatmap::Heatmap(UDPAdapter *udpAdapter, QTimer *qTimer, QWidget *parent) :
     QWidget(parent),
-    mode(mode),
+    parent(parent),
     udp(udpAdapter),
     timer(qTimer),
-    webview(myWebView),
     x(-1),
     y(-1),
     oldX(0),
@@ -35,30 +34,9 @@ Heatmap::Heatmap(int mode, UDPAdapter *udpAdapter, QTimer *qTimer, MyWebView *my
     this->clearImages();
     this->setAttribute(Qt::WA_TransparentForMouseEvents);
 
-    if(this->mode == MODE_OPENGAZER) {
-        // Connect coordinate update signal to the slot
-        connect(this->udp, SIGNAL(coordChanged(int,int)), this, SLOT(setCoord(int,int)));
-    } else if(this->mode == MODE_MOUSE) {
-        // Start mouse tracking
-        connect(this->webview, SIGNAL(mouseCoordChanged(int,int)), this, SLOT(mouseCoordChanged(int,int)));
-    }
     connect(this->timer, SIGNAL(timeout()), this, SLOT(timeout()));
 
     this->resize(WIN_WIDTH, WIN_HEIGHT);
-}
-
-/**
- * Slot to receive new coordinates and update the heatmap.
- * This can be used by other Qt objects emitting signals.
- *
- * @brief Heatmap::setCoord sets new coordinates through Qt signal.
- * @param x x-coordinate on the widget window.
- * @param y y-coordinate on the widget window.
- */
-void Heatmap::setCoord(int x, int y)
-{
-    this->x = (x<WIN_WIDTH)?x:(WIN_WIDTH-1);
-    this->y = (y<WIN_HEIGHT)?y:(WIN_HEIGHT-1);
 }
 
 /**
@@ -77,17 +55,23 @@ void Heatmap::timeout()
 }
 
 /**
- * Slot to receive mouse move signal from MyWebView.
+ * Slot to receive new coordinates and update the heatmap.
+ * This can be used by other Qt objects emitting signals.
  *
- * @brief Heatmap::mouseCoordChanged
- * @param x
- * @param y
+ * @brief Heatmap::setCoord sets new coordinates through Qt signal.
+ * @param x x-coordinate on the widget window.
+ * @param y y-coordinate on the widget window.
  */
+void Heatmap::openGazerCoordChanged(int x, int y)
+{
+    this->x = (x<WIN_WIDTH)?x:(WIN_WIDTH-1);
+    this->y = (y<WIN_HEIGHT)?y:(WIN_HEIGHT-1);
+}
+
 void Heatmap::mouseCoordChanged(int x, int y)
 {
-//    this->addDataPoint(x, y);
     this->x = x;
-    this->y = y;
+    this->y = y+65;
 }
 
 /**

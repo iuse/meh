@@ -16,7 +16,7 @@ public:
     explicit UDPAdapter(QObject *parent = 0);
 
 signals:
-    void coordChanged(int x, int y);
+    void openGazerCoordChanged(int x, int y);
 
 public slots:
     void readyRead();
