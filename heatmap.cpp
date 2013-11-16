@@ -6,8 +6,12 @@
  * @brief Heatmap::Heatmap
  * @param parent defaults to 0.
  */
-Heatmap::Heatmap(int mode, UDPAdapter *udpAdapter, QWidget *parent) :
+Heatmap::Heatmap(int mode, UDPAdapter *udpAdapter, QTimer *qTimer, QWidget *parent) :
     QWidget(parent),
+    udp(udpAdapter),
+    timer(qTimer),
+    x(0),
+    y(0),
     colorImage(WIN_WIDTH, WIN_HEIGHT, QImage::Format_ARGB32),
     alphaImage(WIN_WIDTH, WIN_HEIGHT, QImage::Format_ARGB32),
     data{},
@@ -17,8 +21,6 @@ Heatmap::Heatmap(int mode, UDPAdapter *udpAdapter, QWidget *parent) :
     max(1),
     opacity(OPACITY)
 {
-    this->udp = udpAdapter;
-
     // Append image to top left corner
     setAttribute(Qt::WA_StaticContents);
 
@@ -28,16 +30,18 @@ Heatmap::Heatmap(int mode, UDPAdapter *udpAdapter, QWidget *parent) :
     // Reset visible background color
     this->clearImages();
     this->setAttribute(Qt::WA_TransparentForMouseEvents);
+
     if(mode == MODE_OPENGAZER) {
         // Connect coordinate update signal to the slot
-        connect(udp, SIGNAL(coordChanged(int,int)), this, SLOT(setCoord(int,int)));
+        connect(this->udp, SIGNAL(coordChanged(int,int)), this, SLOT(setCoord(int,int)));
     } else if(mode == MODE_MOUSE) {
         // Start mouse tracking
         this->setMouseTracking(true);
     }
+    connect(this->timer, SIGNAL(timeout()), this, SLOT(update()));
 
     // resize widget to fullscreen
-    resize(WIN_WIDTH, WIN_HEIGHT);
+//    resize(WIN_WIDTH, WIN_HEIGHT);
 }
 
 /**
@@ -49,23 +53,16 @@ Heatmap::Heatmap(int mode, UDPAdapter *udpAdapter, QWidget *parent) :
  * @param y y-coordinate on the widget window.
  */
 void Heatmap::setCoord(int x, int y)
-{    // Coordinates update
-    void updateCoords(int x, int y);
-    this->addDataPoint((x<WIN_WIDTH)?x:(WIN_WIDTH-1),
-                       (y<WIN_HEIGHT)?y:(WIN_HEIGHT-1));
+{
+    //    this->addDataPoint((x<WIN_WIDTH)?x:(WIN_WIDTH-1),
+    //                       (y<WIN_HEIGHT)?y:(WIN_HEIGHT-1));
+        this->x = (x<WIN_WIDTH)?x:(WIN_WIDTH-1);
+        this->y = (y<WIN_HEIGHT)?y:(WIN_HEIGHT-1);
 }
 
-/**
- * Direct call to update new coordinates for the heatmap.
- *
- * @brief Heatmap::updateCoords
- * @param x x-coordinate on the widget window.
- * @param y y-coordinate on the widget window.
- */
-void Heatmap::updateCoords(int x, int y)
+void Heatmap::update()
 {
-    this->addDataPoint((x<WIN_WIDTH)?x:(WIN_WIDTH-1),
-                       (y<WIN_HEIGHT)?y:(WIN_HEIGHT-1));
+    this->addDataPoint(this->x, this->y);
 }
 
 /**
@@ -83,7 +80,24 @@ void Heatmap::paintEvent(QPaintEvent *ev)
 
 void Heatmap::mouseMoveEvent(QMouseEvent *ev)
 {
-    this->addDataPoint(ev->x(), ev->y());
+//    this->addDataPoint(ev->x(), ev->y());
+    this->x = ev->x();
+    this->y = ev->y();
+}
+
+/**
+ * Direct call to update new coordinates for the heatmap.
+ *
+ * @brief Heatmap::updateCoords
+ * @param x x-coordinate on the widget window.
+ * @param y y-coordinate on the widget window.
+ */
+void Heatmap::updateCoords(int x, int y)
+{
+//    this->addDataPoint((x<WIN_WIDTH)?x:(WIN_WIDTH-1),
+//                       (y<WIN_HEIGHT)?y:(WIN_HEIGHT-1));
+    this->x = (x<WIN_WIDTH)?x:(WIN_WIDTH-1);
+    this->y = (y<WIN_HEIGHT)?y:(WIN_HEIGHT-1);
 }
 
 /**
@@ -141,7 +155,7 @@ void Heatmap::setDataSet()
  */
 void Heatmap::drawAlphaImage(int x, int y, int count, bool refresh)
 {
-    QPainter painter(&this->alphaImage);
+    QPainter painter(&(this->alphaImage));
     QRadialGradient grad(x, y, this->radius);
 
     int intensity = this->opacity * ((float)count / (float)this->max);

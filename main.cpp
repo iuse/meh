@@ -9,31 +9,27 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
 
     QWidget w;
-    UDPAdapter udp;
+    UDPAdapter udp(&w);
+    QTimer timer(&w);
+    int mode;
 
-    Heatmap *hm;
-    MyWebView *wv;
+    timer.start(50);
 
-    if(argc < 2) {
-        hm = new Heatmap(MODE_OPENGAZER, &udp, &w);
-        wv = new MyWebView(MODE_OPENGAZER, &udp, &w);
-    }
-    else if (argc == 2 && QString(argv[1]).toInt() == MODE_MOUSE) {
-        hm = new Heatmap(MODE_MOUSE, &udp, &w);
-        wv = new MyWebView(MODE_MOUSE, &udp, &w);
-    }
+    if(argc < 2)
+        mode = MODE_OPENGAZER;
+    else if (argc == 2 && QString(argv[1]).toInt() == MODE_MOUSE)
+        mode = MODE_MOUSE;
 
-    QPalette pal();
-    hm->setStyleSheet("background:transparent;");
-    hm->setAttribute(Qt::WA_TranslucentBackground);
-//    hm->setWindowFlags(Qt::FramelessWindowHint);
-//    w->show();
+mode=MODE_MOUSE;
+    Heatmap hm(mode, &udp, &timer, &w);
+    MyWebView wv(mode, &udp, &timer, &w);
+    wv.stackUnder(&hm);
 
-    wv->stackUnder(hm);
+    hm.setStyleSheet("background: transparent;");
+    hm.setAttribute(Qt::WA_TranslucentBackground);
+
     w.resize(WIN_WIDTH, WIN_HEIGHT);
     w.show();
-
-
 
     return a.exec();
 }

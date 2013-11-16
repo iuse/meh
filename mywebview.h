@@ -14,11 +14,10 @@ class MyWebView : public QWebView
     Q_OBJECT
 
 public:
-    explicit MyWebView(int mode, UDPAdapter *udpAdapter, QWidget *parent = 0);
+    explicit MyWebView(int mode, UDPAdapter *udpAdapter, QTimer *qTimer, QWidget *parent = 0);
 
 public slots:
     void setCoord(int x, int y);
-    void finishLoading(bool);
     void update();
 
 protected:
@@ -28,10 +27,10 @@ private:
     UDPAdapter *udp;
     QTimer *timer;
 
+    QWebElement lastElement;
+
     int x;
     int y;
-
-    QString jQuery;
 
     void highlightDOMElement(int x, int y);
 };

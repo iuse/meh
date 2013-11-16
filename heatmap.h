@@ -17,10 +17,11 @@ class Heatmap : public QWidget
     Q_OBJECT
 
 public:
-    explicit Heatmap(int mode, UDPAdapter *udpAdapter, QWidget *parent = 0);
+    explicit Heatmap(int mode, UDPAdapter *udpAdapter, QTimer *qTimer, QWidget *parent = 0);
 
 public slots:
     void setCoord(int x, int y);
+    void update();
 
 protected:
     void paintEvent(QPaintEvent *ev);
@@ -28,6 +29,10 @@ protected:
 
 private:
     UDPAdapter *udp;
+    QTimer *timer;
+
+    int x;
+    int y;
 
     QImage colorImage;
     QImage alphaImage;
