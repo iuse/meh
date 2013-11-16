@@ -28,6 +28,6 @@ void UDPAdapter::readyRead() {
 //    qDebug() << "Message port: " << senderPort;
 //    qDebug() << "coord x:" << coordList[1];
 //    qDebug() << "coord y:" << coordList[3];
-//    this->h
+
     emit coordChanged(coordList[1].toInt(), coordList[3].toInt());
 }

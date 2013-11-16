@@ -20,10 +20,15 @@ public slots:
     void setCoord(int x, int y);
     void update();
 
+signals:
+    void mouseCoordChanged(int x, int y);
+
 protected:
     void mouseMoveEvent(QMouseEvent *ev);
 
 private:
+    int mode;
+
     UDPAdapter *udp;
     QTimer *timer;
 
@@ -31,8 +36,6 @@ private:
 
     int x;
     int y;
-
-    void highlightDOMElement(int x, int y);
 };
 
 #endif // MYWEBVIEW_H

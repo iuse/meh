@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
     QWidget w;
     UDPAdapter udp(&w);
     QTimer timer(&w);
-    int mode;
+    int mode = 0;
 
     timer.start(50);
 
@@ -20,9 +20,8 @@ int main(int argc, char *argv[])
     else if (argc == 2 && QString(argv[1]).toInt() == MODE_MOUSE)
         mode = MODE_MOUSE;
 
-mode=MODE_MOUSE;
-    Heatmap hm(mode, &udp, &timer, &w);
     MyWebView wv(mode, &udp, &timer, &w);
+    Heatmap hm(mode, &udp, &timer, &wv, &w);
     wv.stackUnder(&hm);
 
     hm.setStyleSheet("background: transparent;");

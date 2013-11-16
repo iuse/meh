@@ -6,12 +6,16 @@
  * @brief Heatmap::Heatmap
  * @param parent defaults to 0.
  */
-Heatmap::Heatmap(int mode, UDPAdapter *udpAdapter, QTimer *qTimer, QWidget *parent) :
+Heatmap::Heatmap(int mode, UDPAdapter *udpAdapter, QTimer *qTimer, MyWebView *myWebView, QWidget *parent) :
     QWidget(parent),
+    mode(mode),
     udp(udpAdapter),
     timer(qTimer),
-    x(0),
-    y(0),
+    webview(myWebView),
+    x(-1),
+    y(-1),
+    oldX(0),
+    oldY(0),
     colorImage(WIN_WIDTH, WIN_HEIGHT, QImage::Format_ARGB32),
     alphaImage(WIN_WIDTH, WIN_HEIGHT, QImage::Format_ARGB32),
     data{},
@@ -31,17 +35,16 @@ Heatmap::Heatmap(int mode, UDPAdapter *udpAdapter, QTimer *qTimer, QWidget *pare
     this->clearImages();
     this->setAttribute(Qt::WA_TransparentForMouseEvents);
 
-    if(mode == MODE_OPENGAZER) {
+    if(this->mode == MODE_OPENGAZER) {
         // Connect coordinate update signal to the slot
         connect(this->udp, SIGNAL(coordChanged(int,int)), this, SLOT(setCoord(int,int)));
-    } else if(mode == MODE_MOUSE) {
+    } else if(this->mode == MODE_MOUSE) {
         // Start mouse tracking
-        this->setMouseTracking(true);
+        connect(this->webview, SIGNAL(mouseCoordChanged(int,int)), this, SLOT(mouseCoordChanged(int,int)));
     }
-    connect(this->timer, SIGNAL(timeout()), this, SLOT(update()));
+    connect(this->timer, SIGNAL(timeout()), this, SLOT(timeout()));
 
-    // resize widget to fullscreen
-//    resize(WIN_WIDTH, WIN_HEIGHT);
+    this->resize(WIN_WIDTH, WIN_HEIGHT);
 }
 
 /**
@@ -54,15 +57,37 @@ Heatmap::Heatmap(int mode, UDPAdapter *udpAdapter, QTimer *qTimer, QWidget *pare
  */
 void Heatmap::setCoord(int x, int y)
 {
-    //    this->addDataPoint((x<WIN_WIDTH)?x:(WIN_WIDTH-1),
-    //                       (y<WIN_HEIGHT)?y:(WIN_HEIGHT-1));
-        this->x = (x<WIN_WIDTH)?x:(WIN_WIDTH-1);
-        this->y = (y<WIN_HEIGHT)?y:(WIN_HEIGHT-1);
+    this->x = (x<WIN_WIDTH)?x:(WIN_WIDTH-1);
+    this->y = (y<WIN_HEIGHT)?y:(WIN_HEIGHT-1);
 }
 
-void Heatmap::update()
+/**
+ * Slot to receive timeout signal from a QTimer.
+ * It is used in OpenGazer mode to set the sampling rate.
+ *
+ * @brief Heatmap::timeout
+ */
+void Heatmap::timeout()
 {
+    if((this->x == this->oldX && this->y == this->oldY) || (this->x < 0 || this->y < 0))
+        return;
     this->addDataPoint(this->x, this->y);
+    this->oldX = this->x;
+    this->oldY = this->y;
+}
+
+/**
+ * Slot to receive mouse move signal from MyWebView.
+ *
+ * @brief Heatmap::mouseCoordChanged
+ * @param x
+ * @param y
+ */
+void Heatmap::mouseCoordChanged(int x, int y)
+{
+//    this->addDataPoint(x, y);
+    this->x = x;
+    this->y = y;
 }
 
 /**
@@ -76,28 +101,6 @@ void Heatmap::paintEvent(QPaintEvent *ev)
     QPainter painter(this);
     QRect dirtyRect = ev->rect();
     painter.drawImage(dirtyRect.topLeft(), this->colorImage, dirtyRect);
-}
-
-void Heatmap::mouseMoveEvent(QMouseEvent *ev)
-{
-//    this->addDataPoint(ev->x(), ev->y());
-    this->x = ev->x();
-    this->y = ev->y();
-}
-
-/**
- * Direct call to update new coordinates for the heatmap.
- *
- * @brief Heatmap::updateCoords
- * @param x x-coordinate on the widget window.
- * @param y y-coordinate on the widget window.
- */
-void Heatmap::updateCoords(int x, int y)
-{
-//    this->addDataPoint((x<WIN_WIDTH)?x:(WIN_WIDTH-1),
-//                       (y<WIN_HEIGHT)?y:(WIN_HEIGHT-1));
-    this->x = (x<WIN_WIDTH)?x:(WIN_WIDTH-1);
-    this->y = (y<WIN_HEIGHT)?y:(WIN_HEIGHT-1);
 }
 
 /**
@@ -228,5 +231,3 @@ void Heatmap::initColorPalette()
     for(int i = 0; i < 256; i++)
         this->palette[i] = paletteImage.pixel(0, i);
 }
-
-
